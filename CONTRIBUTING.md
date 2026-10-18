@@ -63,11 +63,11 @@ We use GitHub for version control and collaboration. To keep the `main` branch s
 
 Use clear and descriptive branch names such as:
 
-- `your-name/homepage-ui`
-- `your-name/matching-logic`
-- `your-name/explore-page`
-- `your-name/login-bug`
-- `your-name/update-readme`
+- `feature/homepage-ui`
+- `feature/matching-logic`
+- `feature/explore-page`
+- `fix/login-bug`
+- `fix/readme-setup`
 
 ### Workflow Steps
 
@@ -150,9 +150,6 @@ If the team adopts a formatter or linter later, all contributors should use it.
 
 ## Development Setup
 
-To set up the project locally:
+Follow the [local setup](README.md#run-locally) and [development guide](docs/DEVELOPMENT.md) for environment variables, sample data, Docker, and testing.
 
-1. Clone the repository
-2. Open the project in your code editor
-3. Install dependencies
-4. TBD
+Install dependencies separately in `back-end/` and `front-end/`. Before submitting code, run the relevant tests and the frontend production build. Backend integration tests require a separate disposable database and clear its collections; see [test configuration](docs/DEVELOPMENT.md#tests).

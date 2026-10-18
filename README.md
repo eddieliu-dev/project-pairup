@@ -1,279 +1,131 @@
 # PairUp
 
-### NYU CS Job-Prep Teammate Matcher
+**Find an interview prep partner who shares your goals and schedule.**
 
-PairUp is a web app designed to help **NYU Computer Science students find compatible job-prep partners or small prep groups** for activities such as LeetCode practice, system design mock interviews, behavioral interview prep, and resume review.
+PairUp helps NYU students connect for coding practice, system design, behavioral interviews, and product management prep. Students build a profile, discover compatible partners with clear match explanations, and coordinate practice through invitations, chat, and session proposals.
 
-## Product Vision Statement
+Built by a five-person team for NYU's Agile & DevOps course using **React, Express, and MongoDB**.
 
-For **NYU CS students actively preparing for internships or full-time roles**,  
-who need **reliable, compatible partners for interview preparation**,  
-**PairUp** is a **job-prep teammate matching platform**  
-that **matches students based on goals, skill level, availability, and preferences**.  
-Unlike **scattered group chats, vague posts, or manual coordination**,  
-our product provides **structured matching, match explanations, and a lightweight way to connect and organize prep sessions**.
+[UX design and wireframes](UX-DESIGN.md) · [Development guide](docs/DEVELOPMENT.md) · [Contributing](CONTRIBUTING.md)
 
----
+## Features
 
-## Description
+- **Profile and onboarding:** capture target role, practice areas, experience, interview timeline, feedback style, and weekly availability.
+- **Partner discovery:** browse ranked recommendations or a shuffled sample, inspect profiles, and see reasons for a match.
+- **Connection requests:** send, accept, decline, and cancel invitations; manage accepted partnerships.
+- **Partner space:** exchange messages and propose practice sessions with a partner.
+- **Account settings:** edit profile information, email, password, and notification preferences.
+- **Authentication:** bcrypt password hashing and JWT authentication for protected API routes.
 
-Many students want to prepare consistently for technical interviews, but finding the right partner is difficult. Students vary in:
+## How matching works
 
-- experience level
-- target role
-- schedule availability
-- prep style
-- preferred level of accountability
+The matching API excludes the current user, profiles missing a role or full availability grid, existing pending or accepted connections, and candidates with no shared availability. It scores the remaining candidates using seven factors:
 
-Most coordination currently happens through unstructured chats or informal posts, which often leads to poor fit, unreliable meetups, and wasted time.
+| Factor | Maximum points |
+| --- | ---: |
+| Shared availability | 35 |
+| Practice focus | 20 |
+| Experience level | 20 |
+| Interview timeline | 10 |
+| Target company tier | 8 |
+| Feedback style | 4 |
+| Preferred interview order | 3 |
 
-Our project aims to solve this by creating a platform where students can:
+These weights sum to 100 for same-role matches. Cross-role matches use reduced credit for level and practice overlap. The ranked endpoint sorts by match percentage, shared availability, then profile creation time. Explanations translate the scoring factors into reasons students can read before connecting.
 
-- create a profile in a few minutes
-- get ranked matches with explanations
-- send connection requests
-- coordinate prep more effectively
-- provide feedback to improve future recommendations
+The score is a rule-based compatibility heuristic, not a measured probability of a successful partnership. See [match scoring](back-end/modules/matchScoring.js), [match explanations](back-end/modules/matchReasons.js), and the [matching routes](back-end/routes/matches.js).
 
----
+## Architecture
 
-## Target Users
+```mermaid
+flowchart LR
+    UI[React application] -->|JSON requests and JWT| API[Express API]
+    API --> Match[Match scoring and explanations]
+    API --> Models[Mongoose models]
+    Models --> DB[(MongoDB)]
+```
 
-Our initial users are:
+The frontend and API run as separate services. During development, React proxies `/api` requests to Express. The Docker frontend uses Nginx for static hosting and API proxying.
 
-- **NYU CS students actively applying for internships or full-time roles**
-- classmates and friends in Agile & DevOps course
-- students in NYU tech communities and related campus circles
+## Run locally
 
-We plan to begin with a pilot group of real students we can directly talk to and gather feedback from, then iterate based on that feedback.
+Use Node.js **20.19 or newer** and npm, plus a local MongoDB instance or a MongoDB Atlas database. Install dependencies in each service; the repository root has no application package.
 
----
-
-## Core Features
-
-### MVP
-
-- Profile creation and editing
-- Matching system that returns a ranked list of compatible partners
-- Match explanations
-- Send and accept connection requests
-
-### Stretch Goals
-
-- Group matching for 3–4 people
-- Session reminders and lightweight scheduling support
-- Improved matching using user feedback over time
-
----
-
-## Team
-
-- **Saun Chen** — [Saun321](https://github.com/Saun321)
-- **Scott Kim** — [jk8308-jpg](https://github.com/jk8308-jpg)
-- **Eddie Liu** — [eddieliu-dev](https://github.com/eddieliu-dev)
-- **Louisia Liu** — [LouisaQvQ](https://github.com/LouisaQvQ)
-- **Ruilin Ma** — [RuilinMa0526](https://github.com/RuilinMa0526)
-
----
-
-## Project History
-
-This project started from a simple but common problem among NYU CS students: many people want to prepare for technical interviews, but struggle to find a prep partner who matches their goals, schedule, and working style.
-
-We chose to build this project because good prep partnerships can improve accountability, consistency, and practice quality, while also making job preparation less isolating and more accessible.
-
-The project is being developed as part of the Agile & DevOps course.
-
----
-
-## How to Contribute
-
-We welcome contributions, feedback, and suggestions.
-
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines, development workflow, and collaboration expectations.
-
----
-
-## Building and Testing
-
-The repo has an **Express** API under `back-end/` and a **React** app under `front-end/` (Create React App). In development, start the API first so the UI’s `proxy` can forward `/api` requests to it.
-
-## Live Deployment
-
-The deployed front-end is available at:
-
-- [https://pairup.up.railway.app](https://pairup.up.railway.app)
-
-## Extra Credit Evidence
-
-- **Dockerized deployment support**:
-  - `back-end/Dockerfile`
-  - `front-end/Dockerfile`
-  - `docker-compose.yml`
-- **Continuous Integration (GitHub Actions)**:
-  - `.github/workflows/ci.yml`
-  - Runs full build-and-test checks on both `push` and `pull_request`:
-    - backend automated tests
-    - front-end production build
-- **Continuous Deployment (Railway)**:
-  - Railway is connected to the repository and automatically deploys new changes from Git updates.
-
-### Prerequisites
-
-- **Node.js** (LTS recommended, e.g. 18.x or 20.x)
-- **npm** (comes with Node)
-
-### Back-end (API)
-
-From the repository root:
+Start the API:
 
 ```bash
-cd back-end
+git clone https://github.com/agile-students-spring2026/final-team-pairup.git
+cd final-team-pairup/back-end
 npm install
-cp .env.example .env   # optional; set PORT, CORS_ORIGIN, JWT_SECRET as needed
+cp .env.example .env
+```
+
+Edit `back-end/.env`: set `MONGODB_URI` to your development database and replace `JWT_SECRET` with a long random secret. Then, from `back-end/`:
+
+```bash
 npm start
 ```
 
-The API listens on [http://localhost:3000](http://localhost:3000) by default (`PORT` in `.env` overrides this). Static files under `back-end/public/` are served at the site root (e.g. `/health.txt`).
-
-**Tests and coverage** (Mocha + Chai + c8):
+In a second terminal, from the repository root:
 
 ```bash
+cd front-end
+npm install
+PORT=3001 npm start
+```
+
+Open [localhost:3001](http://localhost:3001). The API runs on [localhost:3000](http://localhost:3000), matching the frontend's development proxy. Register an account and complete onboarding. A fresh database has no other profiles; use a second account with overlapping availability or the optional development seed described in the [development guide](docs/DEVELOPMENT.md#sample-data).
+
+See the [development guide](docs/DEVELOPMENT.md) for environment variables, Docker setup, tests, deployment configuration, and troubleshooting.
+
+## Validation
+
+```bash
+# Backend integration suite; requires a separate disposable TEST_MONGODB_URI
 cd back-end
 npm test
-npm run coverage
 ```
 
-### Front-end (development)
-
-In a second terminal:
-
 ```bash
+# Frontend tests and production build
 cd front-end
-npm install
-npm start
-```
-
-If port 3000 is already used by the API, Create React App will prompt for another port (often **3001**). `front-end/package.json` sets `"proxy": "http://localhost:3000"` so browser calls to `/api/...` go to the Express server.
-
-### Production build (front-end)
-
-```bash
-cd front-end
-npm install
+CI=true npm test -- --watchAll=false
 npm run build
 ```
 
-Static output is written to `front-end/build/`. Serve that folder with any static host, or use a tool such as `npx serve -s build` for a quick local check.
+Backend tests cover matching, users, invitations, meetings, session proposals, and chat. Frontend tests cover routing, partner screens, scheduling helpers, and relative times. [GitHub Actions](.github/workflows/ci.yml) runs the backend suite and frontend production build on pushes and pull requests; frontend tests can be run locally with the command above.
 
-### Tests (front-end)
+**Backend tests clear collections in the configured test database.** Use a dedicated disposable database; see [test configuration](docs/DEVELOPMENT.md#tests).
 
-```bash
-cd front-end
-npm test
+## Repository layout
+
+```text
+front-end/             React UI, routes, components, and frontend tests
+back-end/              Express API, Mongoose models, matching logic, and tests
+docs/                  Development and deployment notes
+docker-compose.yml     API and Nginx frontend services
+UX-DESIGN.md            Design walkthrough and prototype link
+ux-design/             App map, early wireframes, and design source
+instructions/          Original course milestones and assignment instructions
+.github/               CI, issue templates, and course automation
 ```
 
-By default Create React App runs tests in **watch** mode. For a single non-interactive run (for example in CI):
+## Scope and limitations
 
-```bash
-cd front-end
-CI=true npm test
-```
+This is a course project with API-backed core flows. The [wireframes](UX-DESIGN.md) document early design intent; some planned flows differ from the implementation. Password recovery currently returns a placeholder response without sending a reset email. Group matching and feedback-driven recommendations remain future work. The matching endpoint loads candidate profiles into memory, so larger deployments would need pagination and database-side filtering.
 
-### Docker
+Dockerfiles, Compose configuration, and GitHub Actions are included. Railway deployment notes are in the [development guide](docs/DEVELOPMENT.md#deployment).
 
-This repository includes a minimal Docker setup for extra credit:
+## Team
 
-- `back-end/Dockerfile` runs the Express API
-- `front-end/Dockerfile` builds the React app and serves it with Nginx
-- `docker-compose.yml` starts both services together
-
-Before running Docker, create `back-end/.env` (you can copy from `.env.example`) and set at least:
-
-```env
-MONGODB_URI=your_mongodb_atlas_connection_string
-JWT_SECRET=your_secret_key
-```
-
-Run:
-
-```bash
-docker compose up --build
-```
-
-Then open:
-
-- Front-end: [http://localhost:8080](http://localhost:8080)
-- Back-end health check: [http://localhost:3000/health.txt](http://localhost:3000/health.txt)
-
-Stop containers:
-
-```bash
-docker compose down
-```
-
----
-
-### Back-end Test
-
-Running the Backend:
-
-```
-cd back-end
-npm install
-npm start
-```
-
-Running Tests:
-
-```
-cd back-end
-npm test
-```
-
-### Environment Variables
-
-Create a `.env` file in `back-end/` with:
-
-```env
-MONGODB_URI=your_mongodb_atlas_connection_string
-TEST_MONGODB_URI=your_separate_test_database_connection_string
-JWT_SECRET=your_secret_key
-PORT=3000
-CORS_ORIGIN=http://localhost:3001
-```
-
-Use a different database name for `TEST_MONGODB_URI` (for example `pairup_test`) and never point it at the same database as `MONGODB_URI`.
-
-## Additional Documentation
-
-Relevant project documents and resources:
-
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
-- [README.md](./README.md)
-
----
-
-## Why This Project Matters
-
-A strong prep partner can make interview prep much more effective by improving:
-
-- accountability
-- consistency
-- quality of feedback
-- motivation
-- structure
-
-PairUp aims to reduce the friction of finding that partner and make job prep more accessible for NYU CS students.
-
----
-
-## Current Status
-
-The team is in **Sprint 4**. The **back-end** exposes JSON APIs under `/api` with MongoDB-backed data and JWT-protected routes. The **front-end** is wired to these routes for core flows, with live deployment available on Railway.
-
----
+| Contributor | GitHub |
+| --- | --- |
+| Saun Chen | [Saun321](https://github.com/Saun321) |
+| Scott Kim | [jk8308-jpg](https://github.com/jk8308-jpg) |
+| Eddie Liu | [eddieliu-dev](https://github.com/eddieliu-dev) |
+| Louisia Liu | [LouisaQvQ](https://github.com/LouisaQvQ) |
+| Ruilin Ma | [RuilinMa0526](https://github.com/RuilinMa0526) |
 
 ## License
 
-TBD
+See [LICENSE.md](LICENSE.md) for the included GNU General Public License v3 text.
